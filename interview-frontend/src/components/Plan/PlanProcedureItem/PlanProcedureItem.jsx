@@ -7,29 +7,31 @@ import {
     removeAllUsersFromProcedure,
 } from "../../../api/api";
 
+const userToOption = user => ({
+    value: user.userId ?? user.value,
+    label: user.name ?? user.label,
+    procedureUserId: user.procedureUserId,
+    ...user,
+});
+
 const PlanProcedureItem = ({ procedure, users }) => {
     const [selectedUsers, setSelectedUsers] = useState([]);
     const [userOptions, setUserOptions] = useState([]);
 
     // Refresh user options and assigned users
     const refreshUserLists = useCallback(async () => {
-        // Always use a local copy for clarity
         const allUsers = Array.isArray(users) ? users : [];
 
         // Fetch assigned users for this procedure
         const assigned = await getUsersByProcedure(procedure.procedureId);
-        const assignedOptions = assigned.map(user => ({
-            value: user.userId,
-            label: user.name,
-            procedureUserId: user.procedureUserId,
-            ...user,
-        }));
+        const assignedOptions = assigned.map(userToOption);
         setSelectedUsers(assignedOptions);
 
         // Filter out assigned users from all users for dropdown
-        const filteredUsers = allUsers.filter(
-            u => !assigned.some(a => a.userId === u.value)
-        );
+        const filteredUsers = allUsers
+            .filter(u => !assigned.some(a => a.userId === (u.userId ?? u.value)))
+            .map(userToOption);
+
         // Ensure assigned users are always visible in dropdown
         setUserOptions([
             ...filteredUsers,

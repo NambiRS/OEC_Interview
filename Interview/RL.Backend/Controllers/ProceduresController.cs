@@ -1,9 +1,9 @@
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OData.Query;
-using Microsoft.EntityFrameworkCore;
 using RL.Backend.DTO;
-using RL.Data;
 using RL.Data.DataModels;
+using System.ComponentModel.DataAnnotations;
 
 namespace RL.Backend.Controllers;
 
@@ -12,72 +12,44 @@ namespace RL.Backend.Controllers;
 public class ProceduresController : ControllerBase
 {
     private readonly ILogger<ProceduresController> _logger;
-    private readonly RLContext _context;
+    private readonly IMediator _mediator;
 
-    public ProceduresController(ILogger<ProceduresController> logger, RLContext context)
+    public ProceduresController(ILogger<ProceduresController> logger, IMediator mediator)
     {
         _logger = logger;
-        _context = context ?? throw new ArgumentNullException(nameof(context));
+        _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
     }
 
     [HttpGet]
     [EnableQuery]
-    public IEnumerable<Procedure> Get()
+    public async Task<IEnumerable<Procedure>> Get()
     {
-        return _context.Procedures;
+        return await _mediator.Send(new GetProceduresQuery());
     }
 
     [HttpGet("Users")]
-    public ActionResult GetProcedureUsers([FromQuery] int procedureId)
+    public async Task<ActionResult> GetProcedureUsers([FromQuery, Range(1, int.MaxValue)] int procedureId)
     {
-        var users = _context.ProcedureUsers
-            .Include(pu => pu.User)
-            .Where(pu => pu.ProcedureId == procedureId && !pu.IsDeleted)
-            .Select(pu => new
-            {
-                pu.User.UserId,
-                pu.User.Name,
-                pu.ProcedureId,
-                pu.ProcedureUserId
-            })
-            .ToList();
+        if (procedureId <= 0)
+            return BadRequest("ProcedureId must be greater than 0.");
 
+        var users = await _mediator.Send(new GetProcedureUsersQuery { ProcedureId = procedureId });
         return Ok(users);
     }
 
     /// <summary>
     /// Adds a user to a procedure. Returns 500 on any error.
     /// </summary>
-    /// <param name="dto">DTO containing ProcedureId and UserId.</param>
-    /// <returns>200 OK with the created ProcedureUser, or 500 with error details.</returns>
     [HttpPost("Users")]
     public async Task<IActionResult> AddProcedureUser([FromBody] ProcedureUserDTO dto)
     {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
         try
         {
-            if (!_context.Procedures.Any(p => p.ProcedureId == dto.ProcedureId))
-                throw new Exception($"ProcedureId {dto.ProcedureId} not found.");
-            if (!_context.Users.Any(u => u.UserId == dto.UserId))
-                throw new Exception($"UserId {dto.UserId} not found.");
-
-            var exists = _context.ProcedureUsers.Any(pu => pu.ProcedureId == dto.ProcedureId && pu.UserId == dto.UserId && !pu.IsDeleted);
-            if (exists)
-                throw new Exception("User already assigned to this procedure.");
-
-            var now = DateTime.UtcNow;
-            var procedureUser = new ProcedureUser
-            {
-                ProcedureId = dto.ProcedureId,
-                UserId = dto.UserId,
-                IsDeleted = false,
-                CreateDate = now,
-                UpdateDate = now
-            };
-
-            _context.ProcedureUsers.Add(procedureUser);
-            await _context.SaveChangesAsync();
-
-            return Ok(procedureUser);
+            var result = await _mediator.Send(new AddProcedureUserCommand { ProcedureId = dto.ProcedureId, UserId = dto.UserId });
+            return Ok(result);
         }
         catch (Exception ex)
         {
@@ -88,21 +60,15 @@ public class ProceduresController : ControllerBase
     /// <summary>
     /// Soft deletes a user from a procedure by ProcedureUserId. Returns 500 on any error.
     /// </summary>
-    /// <param name="procedureUserId">The ID of the ProcedureUser to delete.</param>
-    /// <returns>200 OK with a message on success, or 500 with error details.</returns>
-    [HttpDelete("User")]    
-    public async Task<IActionResult> DeleteProcedureUser(int procedureUserId)
+    [HttpDelete("User")]
+    public async Task<IActionResult> DeleteProcedureUser([FromQuery, Range(1, int.MaxValue)] int procedureUserId)
     {
+        if (procedureUserId <= 0)
+            return BadRequest("ProcedureUserId must be greater than 0.");
+
         try
         {
-            var procedureUser = await _context.ProcedureUsers.FindAsync(procedureUserId);
-            if (procedureUser == null || procedureUser.IsDeleted)
-                throw new Exception("ProcedureUser not found or already deleted.");
-
-            procedureUser.IsDeleted = true;
-            procedureUser.UpdateDate = DateTime.UtcNow;
-            await _context.SaveChangesAsync();
-
+            await _mediator.Send(new DeleteProcedureUserCommand { ProcedureUserId = procedureUserId });
             return Ok(new { message = "User deleted from procedure." });
         }
         catch (Exception ex)
@@ -112,30 +78,17 @@ public class ProceduresController : ControllerBase
     }
 
     /// <summary>
-    /// Soft deletes all users from a procedure by ProcedureId. Returns 500 on any error.
+    /// Soft deletes all users from a procedure by ProcedureId. Returns 500 on any error.s
     /// </summary>
-    /// <param name="procedureId">The ID of the procedure whose users will be deleted.</param>
-    /// <returns>200 OK with a message on success, or 500 with error details.</returns>
     [HttpDelete("Users/ByProcedure")]
-    public async Task<IActionResult> DeleteAllUsersInProcedure(int procedureId)
+    public async Task<IActionResult> DeleteAllUsersInProcedure([FromQuery, Range(1, int.MaxValue)] int procedureId)
     {
+        if (procedureId <= 0)
+            return BadRequest("ProcedureId must be greater than 0.");
+
         try
         {
-            var procedureUsers = _context.ProcedureUsers
-                .Where(pu => pu.ProcedureId == procedureId && !pu.IsDeleted)
-                .ToList();
-
-            if (!procedureUsers.Any())
-                throw new Exception("No users found for the specified procedure.");
-
-            var now = DateTime.UtcNow;
-            foreach (var pu in procedureUsers)
-            {
-                pu.IsDeleted = true;
-                pu.UpdateDate = now;
-            }
-
-            await _context.SaveChangesAsync();
+            await _mediator.Send(new DeleteAllUsersInProcedureCommand { ProcedureId = procedureId });
             return Ok(new { message = "All users deleted for the specified procedure." });
         }
         catch (Exception ex)
