@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OData.Query;
+using RL.Backend.CQRS.Procedures;
 using RL.Backend.DTO;
 using RL.Data.DataModels;
 using System.ComponentModel.DataAnnotations;
