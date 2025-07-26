@@ -1,6 +1,9 @@
 using MediatR;
 
-public class DeleteProcedureUserCommand : IRequest
+namespace RL.Backend.CQRS.Procedures
 {
-    public int ProcedureUserId { get; set; }
+    public class DeleteProcedureUserCommand : IRequest
+    {
+        public int ProcedureUserId { get; set; }
+    }
 }

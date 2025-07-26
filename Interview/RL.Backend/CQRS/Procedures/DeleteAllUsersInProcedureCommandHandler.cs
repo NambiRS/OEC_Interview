@@ -5,32 +5,38 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-public class DeleteAllUsersInProcedureCommandHandler : IRequestHandler<DeleteAllUsersInProcedureCommand>
+namespace RL.Backend.CQRS.Procedures
 {
-    private readonly RLContext _context;
-
-    public DeleteAllUsersInProcedureCommandHandler(RLContext context)
+    public class DeleteAllUsersInProcedureCommandHandler : IRequestHandler<DeleteAllUsersInProcedureCommand>
     {
-        _context = context;
-    }
+        private readonly RLContext _context;
 
-    public async Task<Unit> Handle(DeleteAllUsersInProcedureCommand request, CancellationToken cancellationToken)
-    {
-        var procedureUsers = _context.ProcedureUsers
-            .Where(pu => pu.ProcedureId == request.ProcedureId && !pu.IsDeleted)
-            .ToList();
-
-        if (!procedureUsers.Any())
-            throw new Exception("No users found for the specified procedure.");
-
-        var now = DateTime.UtcNow;
-        foreach (var pu in procedureUsers)
+        public DeleteAllUsersInProcedureCommandHandler(RLContext context)
         {
-            pu.IsDeleted = true;
-            pu.UpdateDate = now;
+            _context = context;
         }
 
-        await _context.SaveChangesAsync(cancellationToken);
-        return Unit.Value;
+        public async Task<Unit> Handle(DeleteAllUsersInProcedureCommand request, CancellationToken cancellationToken)
+        {
+            var procedureUsers = _context.ProcedureUsers
+                .Where(pu => pu.ProcedureId == request.ProcedureId
+                          && pu.PlanId == request.PlanId
+                          && !pu.IsDeleted)
+                .ToList();
+
+            if (!procedureUsers.Any())
+                throw new Exception("No users found for the specified procedure and plan.");
+
+            var now = DateTime.UtcNow;
+            foreach (var pu in procedureUsers)
+            {
+                pu.IsDeleted = true;
+                pu.UpdateDate = now;
+            }
+
+            await _context.SaveChangesAsync(cancellationToken);
+            return Unit.Value;
+        }
     }
-}   
+}
+  

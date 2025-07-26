@@ -16,6 +16,9 @@ namespace RL.Data.DataModels
         [ForeignKey("User")]
         public int UserId { get; set; }
 
+        [ForeignKey("Plan")]
+        public int PlanId { get; set; }
+
         public bool IsDeleted { get; set; }
 
         public DateTime CreateDate { get; set; }
@@ -23,5 +26,6 @@ namespace RL.Data.DataModels
 
         public virtual Procedure Procedure { get; set; }
         public virtual User User { get; set; }
+        public virtual Plan Plan { get; set; }
     }
 }

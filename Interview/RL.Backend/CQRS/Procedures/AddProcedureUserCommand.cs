@@ -1,8 +1,12 @@
 using MediatR;
 using RL.Data.DataModels;
 
-public class AddProcedureUserCommand : IRequest<ProcedureUser>
+namespace RL.Backend.CQRS.Procedures
 {
-    public int ProcedureId { get; set; }
-    public int UserId { get; set; }
+    public class AddProcedureUserCommand : IRequest<ProcedureUser>
+    {
+        public int ProcedureId { get; set; }
+        public int UserId { get; set; }
+        public int PlanId { get; set; }
+    }
 }

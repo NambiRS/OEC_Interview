@@ -11,8 +11,8 @@ using RL.Data;
 namespace RL.Data.Migrations
 {
     [DbContext(typeof(RLContext))]
-    [Migration("20250708171452_AddProcedureUsersTable")]
-    partial class AddProcedureUsersTable
+    [Migration("20250725173413_AddProcedureUserTable")]
+    partial class AddProcedureUserTable
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -791,6 +791,9 @@ namespace RL.Data.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int>("PlanId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int>("ProcedureId")
                         .HasColumnType("INTEGER");
 
@@ -801,6 +804,8 @@ namespace RL.Data.Migrations
                         .HasColumnType("INTEGER");
 
                     b.HasKey("ProcedureUserId");
+
+                    b.HasIndex("PlanId");
 
                     b.HasIndex("ProcedureId");
 
@@ -880,6 +885,12 @@ namespace RL.Data.Migrations
 
             modelBuilder.Entity("RL.Data.DataModels.ProcedureUser", b =>
                 {
+                    b.HasOne("RL.Data.DataModels.Plan", "Plan")
+                        .WithMany()
+                        .HasForeignKey("PlanId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("RL.Data.DataModels.Procedure", "Procedure")
                         .WithMany()
                         .HasForeignKey("ProcedureId")
@@ -891,6 +902,8 @@ namespace RL.Data.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Plan");
 
                     b.Navigation("Procedure");
 

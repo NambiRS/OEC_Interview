@@ -6,17 +6,20 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 
-public class GetProceduresQueryHandler : IRequestHandler<GetProceduresQuery, IEnumerable<Procedure>>
+namespace RL.Backend.CQRS.Procedures
 {
-    private readonly RLContext _context;
-
-    public GetProceduresQueryHandler(RLContext context)
+    public class GetProceduresQueryHandler : IRequestHandler<GetProceduresQuery, IEnumerable<Procedure>>
     {
-        _context = context;
-    }
+        private readonly RLContext _context;
 
-    public async Task<IEnumerable<Procedure>> Handle(GetProceduresQuery request, CancellationToken cancellationToken)
-    {
-        return await _context.Procedures.ToListAsync(cancellationToken);
+        public GetProceduresQueryHandler(RLContext context)
+        {
+            _context = context;
+        }
+
+        public async Task<IEnumerable<Procedure>> Handle(GetProceduresQuery request, CancellationToken cancellationToken)
+        {
+            return await _context.Procedures.ToListAsync(cancellationToken);
+        }
     }
 }

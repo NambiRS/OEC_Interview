@@ -92,9 +92,9 @@ export const getUsers = async () => {
 };
 
 // Get users assigned to a specific procedure
-export const getUsersByProcedure = async (procedureId) => {
+export const getUsersByProcedure = async (procedureId, planId) => {
     try {
-        const url = `${api_url}/Procedures/Users?procedureId=${procedureId}`;
+        const url = `${api_url}/Procedures/Users?procedureId=${procedureId}&planId=${planId}`;
         const response = await fetch(url, {
             method: "GET",
         });
@@ -109,13 +109,17 @@ export const getUsersByProcedure = async (procedureId) => {
 };
 
 // Assign a single user to a procedure
-export const assignUserToProcedure = async (procedureId, userId) => {
+export const assignUserToProcedure = async (procedureId, userId, planId) => {
     try {
         const url = `${api_url}/Procedures/Users`;
         const body = {
-            procedureId,
-            userId,
+            procedureId: parseInt(procedureId),
+            userId: parseInt(userId),
+            planId: parseInt(planId),
         };
+        
+        console.log("assignUserToProcedure - Request:", { url, body });
+        
         const response = await fetch(url, {
             method: "POST",
             headers: {
@@ -125,25 +129,39 @@ export const assignUserToProcedure = async (procedureId, userId) => {
             body: JSON.stringify(body),
         });
 
-        if (!response.ok) throw new Error("Failed to assign user to procedure");
+        console.log("assignUserToProcedure - Response status:", response.status);
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error("assignUserToProcedure - Error response:", errorText);
+            throw new Error(`Failed to assign user to procedure. Status: ${response.status}, Error: ${errorText}`);
+        }
 
-        return await response.json();
+        const result = await response.json();
+        console.log("assignUserToProcedure - Success:", result);
+        return result;
     } catch (error) {
         console.error("assignUserToProcedure error:", error);
         return null;
     }
 };
 
-// Remove a single user from a procedure by procedureUserId
-export const removeUserFromProcedure = async (procedureUserId) => {
+// Remove a single user from a procedure by ids
+export const removeUserFromProcedure = async (procedureId, userId, planId) => {
     try {
-        const url = `${api_url}/Procedures/User?procedureUserId=${procedureUserId}`;
+        const url = `${api_url}/Procedures/Users/ByIds`;
+        const body = {
+            procedureId,
+            userId,
+            planId,
+        };
         const response = await fetch(url, {
             method: "DELETE",
             headers: {
                 Accept: "application/json",
                 "Content-Type": "application/json",
             },
+            body: JSON.stringify(body),
         });
 
         if (!response.ok) throw new Error("Failed to remove user from procedure");
@@ -155,10 +173,10 @@ export const removeUserFromProcedure = async (procedureUserId) => {
     }
 };
 
-// Remove all users from a procedure by procedureId
-export const removeAllUsersFromProcedure = async (procedureId) => {
+// Remove all users from a procedure by procedureId and planId
+export const removeAllUsersFromProcedure = async (procedureId, planId) => {
     try {
-        const url = `${api_url}/Procedures/Users/ByProcedure?procedureId=${procedureId}`;
+        const url = `${api_url}/Procedures/Users/ByProcedure?procedureId=${procedureId}&planId=${planId}`;
         const response = await fetch(url, {
             method: "DELETE",
             headers: {

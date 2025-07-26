@@ -28,12 +28,14 @@ public class ProceduresController : ControllerBase
     }
 
     [HttpGet("Users")]
-    public async Task<ActionResult> GetProcedureUsers([FromQuery, Range(1, int.MaxValue)] int procedureId)
+    public async Task<ActionResult> GetProcedureUsers([FromQuery, Range(1, int.MaxValue)] int procedureId, [FromQuery, Range(1, int.MaxValue)] int planId)
     {
         if (procedureId <= 0)
             return BadRequest("ProcedureId must be greater than 0.");
+        if (planId <= 0)
+            return BadRequest("PlanId must be greater than 0.");
 
-        var users = await _mediator.Send(new GetProcedureUsersQuery { ProcedureId = procedureId });
+        var users = await _mediator.Send(new GetProcedureUsersQuery { ProcedureId = procedureId, PlanId = planId });
         return Ok(users);
     }
 
@@ -48,7 +50,12 @@ public class ProceduresController : ControllerBase
 
         try
         {
-            var result = await _mediator.Send(new AddProcedureUserCommand { ProcedureId = dto.ProcedureId, UserId = dto.UserId });
+            var result = await _mediator.Send(new AddProcedureUserCommand 
+            { 
+                ProcedureId = dto.ProcedureId, 
+                UserId = dto.UserId, 
+                PlanId = dto.PlanId 
+            });
             return Ok(result);
         }
         catch (Exception ex)
@@ -78,18 +85,45 @@ public class ProceduresController : ControllerBase
     }
 
     /// <summary>
-    /// Soft deletes all users from a procedure by ProcedureId. Returns 500 on any error.s
+    /// Soft deletes a user from a procedure by ProcedureId, UserId, and PlanId. Returns 500 on any error.
     /// </summary>
-    [HttpDelete("Users/ByProcedure")]
-    public async Task<IActionResult> DeleteAllUsersInProcedure([FromQuery, Range(1, int.MaxValue)] int procedureId)
+    [HttpDelete("Users/ByIds")]
+    public async Task<IActionResult> DeleteProcedureUserByIds([FromBody] DeleteProcedureUserDTO dto)
     {
-        if (procedureId <= 0)
-            return BadRequest("ProcedureId must be greater than 0.");
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
 
         try
         {
-            await _mediator.Send(new DeleteAllUsersInProcedureCommand { ProcedureId = procedureId });
-            return Ok(new { message = "All users deleted for the specified procedure." });
+            await _mediator.Send(new DeleteProcedureUserByIdsCommand 
+            { 
+                ProcedureId = dto.ProcedureId, 
+                UserId = dto.UserId, 
+                PlanId = dto.PlanId 
+            });
+            return Ok(new { message = "User deleted from procedure." });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Soft deletes all users from a procedure by ProcedureId and PlanId. Returns 500 on any error.
+    /// </summary>
+    [HttpDelete("Users/ByProcedure")]
+    public async Task<IActionResult> DeleteAllUsersInProcedure([FromQuery, Range(1, int.MaxValue)] int procedureId, [FromQuery, Range(1, int.MaxValue)] int planId)
+    {
+        if (procedureId <= 0)
+            return BadRequest("ProcedureId must be greater than 0.");
+        if (planId <= 0)
+            return BadRequest("PlanId must be greater than 0.");
+
+        try
+        {
+            await _mediator.Send(new DeleteAllUsersInProcedureCommand { ProcedureId = procedureId, PlanId = planId });
+            return Ok(new { message = "All users deleted for the specified procedure and plan." });
         }
         catch (Exception ex)
         {

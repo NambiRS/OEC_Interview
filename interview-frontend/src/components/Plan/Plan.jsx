@@ -83,6 +83,7 @@ const Plan = () => {
                         <PlanProcedureItem
                           key={p.procedure.procedureId}
                           procedure={p.procedure}
+                          planId={id}
                           users={users}
                         />
                       ))}

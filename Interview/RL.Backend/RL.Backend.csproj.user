@@ -2,5 +2,6 @@
 <Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <ActiveDebugProfile>Docker</ActiveDebugProfile>
+    <NameOfLastUsedPublishProfile>C:\Codes\Nambi_Git_repo\Interview\RL.Backend\Properties\PublishProfiles\FolderProfile1.pubxml</NameOfLastUsedPublishProfile>
   </PropertyGroup>
 </Project>

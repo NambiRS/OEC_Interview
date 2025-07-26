@@ -1,8 +1,8 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace RL.Backend.DTO
 {
-    public class ProcedureUserDTO
+    public class DeleteProcedureUserDTO
     {
         [Required]
         [Range(1, int.MaxValue, ErrorMessage = "ProcedureId must be greater than 0.")]

@@ -1,7 +1,11 @@
 using MediatR;
 using System.Collections.Generic;
 
-public class GetProcedureUsersQuery : IRequest<IEnumerable<object>>
+namespace RL.Backend.CQRS.Procedures
 {
-    public int ProcedureId { get; set; }
+    public class GetProcedureUsersQuery : IRequest<IEnumerable<object>>
+    {
+        public int ProcedureId { get; set; }
+        public int PlanId { get; set; }
+    }
 }

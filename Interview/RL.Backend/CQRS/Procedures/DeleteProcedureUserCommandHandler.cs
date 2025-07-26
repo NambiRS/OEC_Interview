@@ -4,25 +4,28 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-public class DeleteProcedureUserCommandHandler : IRequestHandler<DeleteProcedureUserCommand>
+namespace RL.Backend.CQRS.Procedures
 {
-    private readonly RLContext _context;
-
-    public DeleteProcedureUserCommandHandler(RLContext context)
+    public class DeleteProcedureUserCommandHandler : IRequestHandler<DeleteProcedureUserCommand>
     {
-        _context = context;
-    }
+        private readonly RLContext _context;
 
-    public async Task<Unit> Handle(DeleteProcedureUserCommand request, CancellationToken cancellationToken)
-    {
-        var procedureUser = await _context.ProcedureUsers.FindAsync(new object[] { request.ProcedureUserId }, cancellationToken);
-        if (procedureUser == null || procedureUser.IsDeleted)
-            throw new Exception("ProcedureUser not found or already deleted.");
+        public DeleteProcedureUserCommandHandler(RLContext context)
+        {
+            _context = context;
+        }
 
-        procedureUser.IsDeleted = true;
-        procedureUser.UpdateDate = DateTime.UtcNow;
-        await _context.SaveChangesAsync(cancellationToken);
+        public async Task<Unit> Handle(DeleteProcedureUserCommand request, CancellationToken cancellationToken)
+        {
+            var procedureUser = await _context.ProcedureUsers.FindAsync(new object[] { request.ProcedureUserId }, cancellationToken);
+            if (procedureUser == null || procedureUser.IsDeleted)
+                throw new Exception("ProcedureUser not found or already deleted.");
 
-        return Unit.Value;
+            procedureUser.IsDeleted = true;
+            procedureUser.UpdateDate = DateTime.UtcNow;
+            await _context.SaveChangesAsync(cancellationToken);
+
+            return Unit.Value;
+        }
     }
 }
